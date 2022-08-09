@@ -1,6 +1,6 @@
 # CSC-Thesis-Simulation
 In this rep, I will post the simulation of my thesis work, called "RE-aware inter-DC migration over EON". 
-The simulation is provided in 3 section. The first part is related to controller checkup at the beginning of each migration cycle.
+The simulation is provided in 3 sections. The first part is related to controller checkup at the beginning of each migration cycle.
 #
 An output sample of the first section is as follows:
 
