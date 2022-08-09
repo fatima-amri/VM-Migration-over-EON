@@ -39,16 +39,6 @@ alpha=[9.09, 11.28, 12.57, 10.88, 12.12, 11.56, 10.60,
        12.50, 13.64, 11.58, 14.42, 18.54, 15.81, 12.99]
 
 
-#number of EDFA amplifiers in each physical link :
-EA=np.zeros((numOfNode, numOfNode))
-for i in range(len(linkDis)):
-    for j in range(len(linkDis)):
-        if linkDis[i][j] != 0:
-            temp = (linkDis[i][j] / 80) - 1
-            EA[i][j] = math.floor(temp) + 2
-#print(EA)
-
-
 ######################################### controller checkup ###########################################
 def controller_checkup ():
     P_peak = 200  # watt
