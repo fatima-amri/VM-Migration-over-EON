@@ -40,6 +40,7 @@ alpha=[9.09, 11.28, 12.57, 10.88, 12.12, 11.56, 10.60,
 
 
 ######################################### controller checkup ###########################################
+NumOfReq=100
 def controller_checkup ():
     P_peak = 200  # watt
     P_idle = 100  # watt
@@ -58,17 +59,19 @@ def controller_checkup ():
 
     # amount of workload in each DC
     Vec_Pdyna = []
+    all_cpu_reqs = []
     for dc in range(numOfNode):
-        cpu_req = np.random.randint(1, 3, size=400)
+        cpu_req = list(np.random.randint(1, 3, size=NumOfReq))
+        all_cpu_reqs.append(cpu_req)
         total_cpu = sum(cpu_req)
         U_mn = total_cpu / 1600
         numOfServer = math.ceil(total_cpu / 16)
-        P_dynamic = (P_peak - P_idle) * U_mn * numOfServer
+        P_dynamic = (P_peak - P_idle) * U_mn * numOfServer #this dynamic power is for before migration
         Vec_Pdyna.append(P_dynamic)
-    print("amount of P dynamic in each DC = ", Vec_Pdyna)
+    print("amount of P dynamic in each DC = ", Vec_Pdyna) #this vector has 14 elements. each for one DC.
 
     P_static = (P_idle + (eta - 1) * P_peak) * 100  # is equal to 140 watt and 100 server in total in a DC
-    print(P_static)
+    #print(P_static)
     P_dynamic1 = np.array(Vec_Pdyna)
     P_dc = list(P_static + P_dynamic1)
     print("workload in each DC before migration= ", P_dc)
@@ -78,23 +81,48 @@ def controller_checkup ():
         if P_dc[dc] > RE_resources[dc]:
             List_D.append(dc)
     print("DC with insufficient RE = ", List_D)
-    return List_D
+    return List_D, P_dc, RE_resources, all_cpu_reqs, Vec_Pdyna
 
 ######################################### MAB ###########################################
 
-def MAB(List_D, numOfNode):
+def MAB(numOfNode, List_D, P_dc,RE_resources, all_cpu_reqs, Vec_Pdyna):
     ListOfDC = list(range(numOfNode))
     ListOfArms= list(set(ListOfDC)-set(List_D))
     beta = 0.001 #dollar
-    round = 0
+
+    fi_src=np.zeros(numOfNode)
+    for i in List_D:
+        fi_src[i]=P_dc[i]-RE_resources[i]
+
+    fi_des=np.zeros(numOfNode)
+    for j in ListOfArms:
+        fi_des[j]= P_dc[j]-RE_resources[j]
+
+    #exploration
     cost = np.zeros((len(List_D),len(ListOfArms)))
+    remain_wl = Vec_Pdyna
     for dc in List_D:
+        reqNumber=0
+        bw = list(np.random.randint(2, 20, size=NumOfReq)) # Gbps
         for arm in ListOfArms:
             (T, Amp)= R_OG(dc, arm) #receiving the number of used transponders and amplifiers in the path
-            #Total_c= (alpha[arm]* fi) + (beta* bw) + (gamma[]* T)+ (sigma[] * Amp)
-            #cost[dc][arm]= Total_c
+            Total_c= (alpha[dc]* fi_src[dc]) + (beta * (bw[reqNumber] + T + Amp)) + (alpha[arm]* max(fi_des[arm],0))
+            cost[dc][arm]= Total_c
+            Migrated_P = P_dynamic_calculation(dc, all_cpu_reqs, reqNumber)
+            remain_wl[dc] = Vec_Pdyna[dc] - Migrated_P
+            reqNumber+=1
+    print("cost after exploration = ", cost)
+    print("remaining workload after exploration = ", remain_wl)
 
-    return
+    return cost
+
+def P_dynamic_calculation(dc, all_cpu_reqs, reqNumber):
+    P_peak = 200  # watt
+    P_idle = 100  # watt
+    cpu_req = all_cpu_reqs[dc]
+    P_wl = cpu_req[reqNumber] / 1600
+    P_dyna = (P_peak - P_idle) * P_wl
+    return P_dyna
 
 ######################### ROUTING AND OPTICAL GROOMING ###############################
 
@@ -112,4 +140,3 @@ def R_OG (src, des):
 
 
     return
-
