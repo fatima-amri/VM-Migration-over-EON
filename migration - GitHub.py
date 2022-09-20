@@ -98,61 +98,75 @@ def MAB(numOfNode, List_D, P_dc,RE_resources, all_cpu_reqs, Vec_Pdyna):
     for j in ListOfArms:
         fi_des[j]= P_dc[j]-RE_resources[j]
 
-        # exploration
-        cost = np.zeros((len(List_D), len(ListOfArms)))  # src * des
-        t = 2  # window size
-        cost_matrix = []  # contains the cost matrix of the last t rounds
-        remain_wl = Vec_Pdyna
-        teta = 0
-        for dc in List_D:
-            reqNumber = 0
-            bw_req = list(np.random.randint(2, 20, size=NumOfReq))  # Gbps
+    #exploration
+    cost = np.zeros((len(List_D),len(ListOfArms))) #src * des
+    t = 20  # window size
+    remain_wl = Vec_Pdyna
+    teta = 0
+    reqNumVec=[]
+    bw_reqVec=[]
+    for dc in List_D:
+        reqNumber=0
+        bw_req = list(np.random.randint(2, 20, size=NumOfReq)) # Gbps
+        bw_reqVec.append(bw_req)
+        for arm in ListOfArms:
+            (T, Amp)= R_OG(dc, arm,bw_req[reqNumber]) #receiving the number of used transponders and amplifiers in the path
+            Total_c= (alpha[dc]* fi_src[dc]) + (beta * (bw_req[reqNumber] + T + Amp)) + (alpha[arm]* max(fi_des[arm],0))
+            cost[dc][arm]= Total_c
+            Migrated_P = P_dynamic_calculation(dc, all_cpu_reqs, reqNumber)
+            remain_wl[dc] = Vec_Pdyna[dc] - Migrated_P
+            reqNumber+=1
+            teta +=1
+        reqNumVec.append(reqNumber)
+    print("cost after exploration = ", cost)
+    print("remaining workload after exploration = ", remain_wl)
+    print("teta after exploration = ", teta)
+
+
+    #explotation
+    zi = 1
+    for dc in List_D:
+        cost_matrix = []  # archive the cost matrix of the previous rounds
+        Index_vec = []
+        Index_dic ={}
+        while remain_wl[dc] >= RE_resources[dc] :
+            teta += 1
+            cost_matrix.append(cost)
             for arm in ListOfArms:
-                (T, Amp) = R_OG(dc, arm)  # ????? #receiving the number of used transponders and amplifiers in the path
-                Total_c = (alpha[dc] * fi_src[dc]) + (beta * (bw_req[reqNumber] + T + Amp)) + (
-                            alpha[arm] * max(fi_des[arm], 0))
-                cost[dc][arm] = Total_c
-                Migrated_P = P_dynamic_calculation(dc, all_cpu_reqs, reqNumber)
-                remain_wl[dc] = Vec_Pdyna[dc] - Migrated_P
+                if max(fi_des[arm], 0) == 0 : #just to check that the destination DC won't get overloaded and swith to BE consumption
+                    cMean = c_mean(teta, t, dc, arm, cost_matrix)
+                    E_term = math.sqrt((zi * math.log(min(teta, t)))/t)
+                    i = cMean + E_term
+                    Index_vec.append(i)
+                    Index_dic[arm]= i
 
-                cost_matrix = WindowCosts(t, cost)  # ??????
-
-                reqNumber += 1
-                teta += 1
-        print("cost after exploration = ", cost)
-        print("remaining workload after exploration = ", remain_wl)
-        print("teta after exploration = ", teta)
-
-        # explotation
-        zi = 1
-        selected_arm = []
-        for dc in List_D:
-            Index_vec = []
-            while remain_wl[dc] >= RE_resources[dc]:
-                for arm in ListOfArms:
-                    cMean = c_mean(t, dc, arm, cost, cost_matrix)
-                    E_term = math.sqrt((zi * math.log(min(teta, t))) / t)
-                    Index_vec.append(cMean + E_term)
-                    (T, Amp) = R_OG(dc, arm)
-                    ###update energy consumption
-                print(Index_vec)
-
+            print("index vector of DC ", dc, "is = ", Index_vec)
+            print("index dictionary = ", Index_dic)
             index_min = min(Index_vec)
-            selected_arm.append(index_min)
-            # now we need to figure out that this min index is for which arm and select that one as destination.
+            arm1 = [k for k, v in Index_dic.items() if v == index_min][0]
+            (T, Amp) = R_OG(dc, arm1)
 
-        return cost
+            reqNumber1=reqNumVec[dc]
+            bw_req1=bw_reqVec[dc]
+            Total_c = (alpha[dc] * fi_src[dc]) + (beta * (bw_req1[reqNumber1] + T + Amp)) + (alpha[arm1] * max(fi_des[arm1], 0))
+            cost[dc][arm1] = Total_c
+            Migrated_P = P_dynamic_calculation(dc, all_cpu_reqs, reqNumber1)
+            remain_wl[dc] = Vec_Pdyna[dc] - Migrated_P
+
+    return cost , bw_reqVec
 
 
-def WindowCosts(t, cost): #not complete
-    return
+def c_mean(teta, t, dc, arm, cost_matrix):
+    n = cost_matrix[teta-1][dc][arm]
+    if teta <= t :
+        for t1 in range(teta-2,-1,-1):
+            n += cost_matrix[t1][dc][arm]
+        d = teta
+    else:
+        for t1 in range(teta-2,(teta-1)-t,-1):
+            n += cost_matrix[t1][dc][arm]
+        d = t
 
-
-def c_mean(t, dc, arm, cost, cost_matrix):
-    n = cost[dc][arm]
-    for t1 in range(t - 1):
-        n += cost_matrix[t1][dc][arm]
-    d = t
     Mean= n/d
     return Mean
 
@@ -166,17 +180,4 @@ def P_dynamic_calculation(dc, all_cpu_reqs, reqNumber):
 
 ######################### ROUTING AND OPTICAL GROOMING ###############################
 
-#number of EDFA amplifiers in each physical link :
-EA=np.zeros((numOfNode, numOfNode))
-for i in range(len(linkDis)):
-    for j in range(len(linkDis)):
-        if linkDis[i][j] != 0:
-            temp = (linkDis[i][j] / 80) - 1
-            EA[i][j] = math.floor(temp) + 2
-#print(EA)
 
-
-def R_OG (src, des): #not complete
-
-
-    return
