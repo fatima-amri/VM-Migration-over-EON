@@ -10,3 +10,5 @@ amount of P dynamic in each DC =  [91.25, 100.0, 77.0625, 95.0, 97.5, 79.3125, 9
 workload in each DC before migration=  [14091.25, 14100.0, 14077.0625, 14095.0, 14097.5, 14079.3125, 14095.0, 14092.5, 14097.5, 14096.25, 14093.125, 14096.875, 14100.0, 14095.0]
 
 DC with insufficient RE =  [2, 4, 7, 11, 12]
+#
+the sample result of first draft of the code is presented in "sample result.txt". the cost matrix at the end is represented by power consumption unit
