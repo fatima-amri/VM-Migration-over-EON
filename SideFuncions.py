@@ -66,6 +66,13 @@ def routing(src, des):
 
     return delay
 
+def cost_cal(costVec):
+    vec = []
+    for element in costVec:
+        if element > 0 :
+            vec.append(element)
+    s = sum(vec)
+    return s
 
 # Calulating the average of a list
 def average(lst):
