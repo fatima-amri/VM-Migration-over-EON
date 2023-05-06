@@ -3,59 +3,27 @@ import networkx as nx
 import math
 from collections import deque
 
-########################## Topology ##########################
 
-numOfNode = 14
-NSFNet = [[0,1,1,1,0,0,0,0,0,0,0,0,0,0],
-          [1,0,1,0,0,0,0,1,0,0,0,0,0,0],
-          [1,1,0,0,1,0,0,0,0,0,0,0,0,0],
-          [1,0,0,0,0,1,0,0,0,0,1,0,0,0],
-          [0,0,1,0,0,1,0,0,1,0,0,0,1,0],
-          [0,0,0,1,1,0,1,0,0,0,0,0,0,0],
-          [0,0,0,0,0,1,0,1,0,0,0,0,0,0],
-          [0,1,0,0,0,0,1,0,0,1,0,0,0,0],
-          [0,0,0,0,1,0,0,0,0,1,0,0,0,0],
-          [0,0,0,0,0,0,0,1,1,0,0,1,0,1],
-          [0,0,0,1,0,0,0,0,0,0,0,1,0,1],
-          [0,0,0,0,0,0,0,0,0,1,1,0,1,0],
-          [0,0,0,0,1,0,0,0,0,0,0,1,0,1],
-          [0,0,0,0,0,0,0,0,0,1,1,0,1,0]]
+######################################### controller checkup Function ##########################################
 
-linkDis = [[0,750,800,880,0,0,0,0,0,0,0,0,0,0],
-           [750,0,1240,0, 0, 0,0,2200,0,0,0,0,0,0],
-           [800,1240,0,0,1010,0,0,0,0,0,0,0,0,0],
-           [880,0,0,0,0,630,0,0,0,0,2350,0,0,0],
-           [0,0,1010,0,0,720,0,0,1620,0,0,0,2100,0],
-           [0,0,0,630,720,0,700,0,0,0,0,0,0,0],
-           [0,0,0,0,0,700,0,650,0,0,0,0,0,0],
-           [0,2200, 0, 0, 0, 0, 650, 0, 0, 610, 0, 0, 0, 0],
-           [0, 0, 0, 0, 1620, 0, 0, 0, 0, 1900, 0, 0, 0, 0],
-           [0, 0, 0, 0, 0, 0, 0, 610, 1900, 0, 0, 1000, 0, 1320],
-           [0, 0, 0, 2350, 0, 0, 0, 0, 0, 0, 0,740, 0, 700],
-           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1000,740, 0, 900, 0],
-           [0, 0, 0, 0,2100, 0, 0, 0, 0, 0, 0, 900, 0, 830],
-           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1320, 700, 0, 830, 0]]
+NumOfReq = "You Need to Enter the Number Of Requests Here"
 
-#per unit energy cost for each DCs in NSF net.
-alpha=[9.09, 11.28, 12.57, 10.88, 12.12, 11.56, 10.60,
-       12.50, 13.64, 11.58, 14.42, 18.54, 15.81, 12.99]
+alpha= np.random.uniform(9,15,size=numOfNode)
 
-######################################### controller checkup ###########################################
-NumOfReq = 450
 def controller_checkup ():
     P_peak = 200  # watt
     P_idle = 100  # watt
     c_m = 100  # number of servers in each DC
     eta = 1.2
-    a = 0.3 * P_peak * c_m * eta
-    b = P_peak * c_m * eta
+    a = 0.3 * P_peak * c_m * eta # 7200 watt
+    b = P_peak * c_m * eta # 24000 watt
 
     # available RE resources at the beginning of the migration cycle
     RE_resources = []
     for dc in range(numOfNode):
         zeta_s = np.random.randint(a, b)
         RE_resources.append(zeta_s)
-    print("available RE = ", RE_resources)
+    #print("available RE = ", RE_resources)
 
 
     # amount of workload in each DC
@@ -69,183 +37,168 @@ def controller_checkup ():
         numOfServer = math.ceil(total_cpu / 16)
         P_dynamic = (P_peak - P_idle) * U_mn * numOfServer #this dynamic power is for before migration
         Vec_Pdyna.append(P_dynamic)
-    print("amount of P dynamic in each DC = ", Vec_Pdyna) #this vector has 14 elements. each for one DC.
+    #print("amount of P dynamic in each DC = ", Vec_Pdyna) #this vector has 14 elements. each for one DC.
     #print("CPU requests of each DCs in the topology : ", all_cpu_reqs)
 
     P_static = (P_idle + (eta - 1) * P_peak) * 100  # is equal to 140 watt and 100 server in total in a DC
     #print(P_static)
     P_dynamic1 = np.array(Vec_Pdyna)
     P_dc = list(P_static + P_dynamic1)
-    print("workload (expressed in terms of power) in each DC before migration = ", P_dc)
+    #print("workload (expressed in terms of power) in each DC before migration = ", P_dc)
 
     List_D = []
     for dc in range(numOfNode):
         if P_dc[dc] > RE_resources[dc]:
             List_D.append(dc)
     print("DC with insufficient RE = ", List_D)
-    return List_D, P_dc, RE_resources, all_cpu_reqs, Vec_Pdyna
 
-######################################### MAB ###########################################
+    #initial BE cost calculation (before migration):
+    fi_src = np.zeros(numOfNode)
+    initial_cost = np.zeros(numOfNode)
+    for i in range(numOfNode):
+        fi_src[i] = P_dc[i] - RE_resources[i]
+        initial_cost [i] = alpha[i] * fi_src[i]
+    #print("Initial cost before migration = ", initial_cost)
+    return List_D, P_dc, RE_resources, all_cpu_reqs, initial_cost
 
-def MAB(numOfNode, List_D, P_dc,RE_resources, all_cpu_reqs, Vec_Pdyna):
+
+######################################### MAB Function ###########################################
+
+def MAB(numOfNode, List_D, P_dc,RE_resources, all_cpu_reqs):
     ListOfDC = list(range(numOfNode))
     ListOfArms= list(set(ListOfDC)-set(List_D))
     print("List of Arms : ", ListOfArms)
-    beta = 0.001 #dollar
+    rho = 0.1
+    beta_T = 22 
+    c_ROADM = [163.02, 163.02, 163.02, 163.02, 163.02, 150.54, 150.54, 163.02, 150.54,175.5,163.02,163.02,163.02,163.02] #As this cost is fix, we have pre-calculate thhis.
+    
 
-    fi_src=np.zeros(numOfNode)
-    for i in List_D:
-        fi_src[i]=P_dc[i]-RE_resources[i]
 
-
-    fi_des=np.zeros(numOfNode)
-    for j in ListOfArms:
-        fi_des[j]= P_dc[j]-RE_resources[j]
-
-    #exploration
-    cost = np.zeros((numOfNode,numOfNode)) #src * des
-    t = 100 # window size
-    remain_wl = P_dc
+    #Exploration
+    cost = np.zeros((numOfNode,numOfNode)) # migration cost matrix  #src * des
+    costNet = np.zeros((numOfNode,numOfNode)) # optical network costs   (src * des)
+    lnk_d_mat = np.zeros((numOfNode,numOfNode)) #(src * des) a matrix to get the delay of the link
+    t = 30 # window size
+    remain_wl = P_dc # or we can say remaining power
     teta = 0
     reqNumVec = np.zeros((numOfNode, 1)) #number of migration in each DC
     bw_reqVec = np.zeros((numOfNode, NumOfReq))
+
+    reg_vec =[]
+    reg_dc_mat = np.zeros((numOfNode))
+    arm_counter = [0] * numOfNode
+
     for dc in List_D:
+        reg_dc = []
         reqNumber=0
         bw_req = list(np.random.randint(2, 20, size=NumOfReq)) # Gbps
         for i in range(NumOfReq):
             bw_reqVec[dc][i]= bw_req[i]
 
         for arm in ListOfArms:
-            T = OG(teta, dc, arm,bw_req[reqNumber]) #receiving the number of used transponders and amplifiers in the path
-            Amp = routing(dc, arm)
-            Total_c= (alpha[dc]* fi_src[dc]) + (beta * (bw_req[reqNumber] + T + Amp)) + (alpha[arm]* max(fi_des[arm],0))
-            cost[dc][arm]= Total_c
-            #print(cost)
+            arm_counter[arm] += 1
+            T = OG(teta, dc, arm,bw_req[reqNumber])
+            link_delay = np.random.uniform(10,200) #milisec
+            lnk_d_mat[dc][arm]= link_delay
+            mig_cost = (rho * link_delay)
+
+            net_cost = (beta_T * T) + (c_ROADM[dc]+c_ROADM[arm])
+
+            cost[dc][arm] = mig_cost
+            costNet[dc][arm] += net_cost
             Migrated_P = P_calculation(dc, all_cpu_reqs, reqNumber)
             remain_wl[dc] = P_dc[dc] - Migrated_P
+            remain_wl[arm] = P_dc[arm] + Migrated_P
+
+            cMig_opt = (beta_T * 0) +(rho * 105)  # millisec
+            regret = np.abs(mig_cost + (beta_T * T) - cMig_opt)
+            #print("reg = ",regret)
+            reg_vec.append(regret)
+            reg_dc.append(regret)
+
             reqNumber+=1
             teta +=1
         reqNumVec[dc][0] = reqNumber
+        #print("for dc",dc, "the reg vec after exploration is ",reg_dc)
+        #print(len(reg_dc))
+        #reg_dc_mat[dc][0] = reg_dc
     #print("cost after exploration = ", cost)
-    print("remaining workload after exploration = ", remain_wl) # only dynamic power consumption has been considered for this term. as static term is always constatnt.
-    print("teta after exploration = ", teta)
+    #print("remaining workload after exploration = ", remain_wl) # only dynamic power consumption has been considered for this term. as static term is always constatnt.
+    #print("teta after exploration = ", teta)
     #print("request number vector : ", reqNumVec)
     #print("vector request of BW: ", bw_reqVec)
-    teta_explo = teta
 
 
-    #explotation
-    zi = 1
+
+    #Explotation
+    zi = 0.55
     for dc in List_D:
-
-        Index_dic ={}
+        regret2 =[]
+        Index_dic = {}
         reqNumber1 = int(reqNumVec[dc][0])
         bw_req1 = bw_reqVec[dc]
-        cost_matrix = deque(maxlen= t)   # archive the cost matrix of the previous rounds
+        time_matrix = deque(maxlen= t)   # archive the delay matrix of the previous rounds
         while remain_wl[dc] >= RE_resources[dc]:
             teta += 1
-            print("round number (teta) = ", teta)
-            cost_matrix.append(cost)
+            time_matrix.append(lnk_d_mat)
             Index_vec = []
+
             for arm in ListOfArms:
-                if max(fi_des[arm], 0) == 0 : #just to check that the destination DC won't get overloaded and swith to BE consumption
-                    cMean = c_mean(dc, arm, cost_matrix)
-                    E_term = math.sqrt((zi * math.log(min(teta, t)))/t)
-                    i = cMean + E_term
-                    Index_vec.append(i)
-                    Index_dic[arm]= i
-            print("index vector of DC ", dc, "is = ", Index_vec)
-            print("index dictionary = ", Index_dic)
+                arm_counter[arm] += 1
+                tMean = t_mean(dc, arm, time_matrix)
+                E_term = math.sqrt((zi * math.log(min(teta, t)))/arm_counter[arm])
+                i = tMean - E_term  # this i is the estimated data transmission time
+                mig_cost1 = (rho * i)
+                Index_vec.append(mig_cost1)
+                Index_dic[arm]= mig_cost1
+            #print("index vector of DC ", dc, "is = ", Index_vec)
+            #print("index dictionary = ", Index_dic)
 
             index_min = min(Index_vec)
             arm1 = [k for k, v in Index_dic.items() if v == index_min][0]
-            print("the arm related to DC", dc, " the minimum index = ", arm1)
+            #print("the arm related to DC", dc, " the minimum index = ", arm1)
 
-
+            # Do the migration
             T = OG(teta, dc, arm1, bw_req1[reqNumber1])
-            Amp = routing(dc, arm1)
-
-            Total_c = (alpha[dc] * fi_src[dc]) + (beta * (bw_req1[reqNumber1] + T + Amp)) + (alpha[arm1] * max(fi_des[arm1], 0))
-            cost[dc][arm1] = Total_c
+            link_delay = np.random.uniform(10, 200)  # millisecond
+            lnk_d_mat[dc][arm1] = link_delay
             Migrated_P = P_calculation(dc, all_cpu_reqs, reqNumber1)
             remain_wl[dc] = P_dc[dc] - Migrated_P
+            remain_wl[arm1] = P_dc[arm1] + Migrated_P
+            mig_cost2 = (rho * index_min)
+
+            net_cost1 = (beta_T * T) + (c_ROADM[dc]+c_ROADM[arm1])
+
+            cost[dc][arm1] += mig_cost2
+            costNet[dc][arm1] += net_cost1
+
+            cMig_opt1 = (beta_T * 0) + (rho * 105)
+            regret1 = np.abs((mig_cost2 + (beta_T * T)) - cMig_opt1)
+            reg_vec.append(regret1)
+            regret2.append(regret1)
+
             reqNumber1 +=1
         reqNumVec[dc][0] = reqNumber1
+        #regret3 = list(np.cumsum(regret2))
+        #print("for dc ", dc, "the cum sum is ", regret3)
+        #print("for dc ",dc," the reg vec after exploitation is ",regret2)
+        #print(len(regret2))
+    #print("reg_vec after explotation = ", reg_vec)
 
-    #print("the cost matrix after MAB : ", cost)
-    print("total round : ", teta)
-    return cost
+    #print("remaining workload after explotation = ", remain_wl)
 
+    #print("total round : ", teta)
 
-def c_mean(dc, arm, cost_matrix):
-    n = 0
-    d = len(cost_matrix)
-    for k in range(d):
-        n += cost_matrix[k][dc][arm]
-    Mean = n/d
+    BEcostOfDC = c_calculation(alpha, remain_wl) #this is the cost of DCs after finishing migration (IT IS NOT ABOUT MIGRATION COST)
 
-    return Mean
-
-
-def P_calculation(dc, all_cpu_reqs, reqNumber):
-    P_peak = 200  # watt
-    P_idle = 100  # watt
-    eta = 1.2
-    cpu_req = all_cpu_reqs[dc]
-    P_wl = cpu_req[reqNumber] / 1600
-    P_dyna = (P_peak - P_idle) * P_wl
-    P_static = P_idle + (eta - 1) * P_peak
-    remain_wl = P_dyna + P_static
-    return remain_wl
+    return cost, BEcostOfDC, reg_vec, teta, costNet
 
 
-######################### ROUTING AND OPTICAL GROOMING ###############################
+######################### Optical Grooming Function ###############################
 
-### number of EDFA amplifiers in each physical link :
-EA = np.zeros((numOfNode, numOfNode))
-for i in range(len(linkDis)):
-    for j in range(len(linkDis)):
-        if linkDis[i][j] != 0:
-            temp = (linkDis[i][j] / 80) - 1
-            EA[i][j] = math.floor(temp) + 2
-#print(EA)
-
-
-numOfSBVT = 10 # number of SBVT in each DC
-SubTrans_MaxCap = 40 #Gbps (The maximum capacity of carrier)
-SBVTCap = 400
-
-
-def store(*values):
-    store.values = values or store.values
-    return store.values
-store.values = ()
-
-
-def checkTheRound(teta):
-    if teta == 0:
-        DC_active_SBVT = [0] * numOfNode
-        SBVT_cap = np.ones((numOfNode, numOfSBVT)) * SBVTCap  # Gbps
-        NumOfSubT = np.ones((numOfNode, numOfSBVT)) * 10
-        preSelectedNodes = []
-        store(preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
-    (a,b,c,d) = store()
-    return a, b, c, d
-
-
-def routing(src, des):
-    ### finding shorting path
-    graph = nx.from_numpy_matrix(np.matrix(linkDis), create_using=nx.DiGraph)
-    path = nx.shortest_path(graph, source=src, target=des)
-    # print(path)
-    temp1 = 0
-    for n in range(1, len(path)):
-        #print(n)
-        temp1 += EA[path[n - 1]][path[n]]
-    NumAmp = temp1
-
-    return NumAmp
-
+numOfSBVT = 55 # We assume no limit in the numbers.
+SubTrans_MaxCap = 40 # Gbps (The maximum capacity of carrier)
+SBVTCap = 400 # Gbps (the total capacity of one SBVT)
 
 def OG (teta, src, des, bw_req):
     # checking the round and getting the required values
@@ -262,7 +215,6 @@ def OG (teta, src, des, bw_req):
         des_T_index = DC_active_SBVT[des]
 
         if SBVT_cap[src][src_T_index] <= SBVTCap and SBVT_cap[des][des_T_index] <= SBVTCap:
-            #print(SBVT_cap)
             if NumOfSubT[src][src_T_index] > 0 and NumOfSubT[des][des_T_index] > 0:
                 #print(NumOfSubT)
                 NumOfSubT[src][src_T_index] -= 1
@@ -298,7 +250,7 @@ def OG (teta, src, des, bw_req):
                 result = Operation2(src, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
                 NumTrans += result
         else:
-            result1 = Operation2_2(rc, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
+            result1 = Operation2_2(src, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
             NumTrans += result1
 
     elif src not in preSelectedNodes and des in preSelectedNodes:
@@ -320,7 +272,7 @@ def OG (teta, src, des, bw_req):
                 result = Operation2(src, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
                 NumTrans += result
         else:
-            result1 = Operation2_2(rc, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
+            result1 = Operation2_2(src, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
             NumTrans += result1
 
     # Operation 3:
@@ -401,10 +353,3 @@ def Operation3(src, des, bw_req, preSelectedNodes, DC_active_SBVT, SBVT_cap, Num
     NumTrans = 2
     store(preSelectedNodes, DC_active_SBVT, SBVT_cap, NumOfSubT)
     return NumTrans
-
-
-###################################### MAIN ########################################
-
-(List_D, P_dc, RE_resources, all_cpu_reqs, Vec_Pdyna) = controller_checkup()
-COST = MAB(numOfNode, List_D, P_dc, RE_resources, all_cpu_reqs, Vec_Pdyna)
-print("Final cost matrix = ", COST)
