@@ -13,7 +13,7 @@ To reproduce the results in this project, please follow these steps:
 
 ``` pip install numpy``` 
 
-Other libraries that are required to be installed are, Networkx, Math and Collections, Deque.
+Other libraries that are required to be installed are, Networkx, Math, Collections, Deque and Datetime.
 
 Open the project in your preferred Python IDE. We recommend using PyCharm.
 Run the main .py file in your Python IDE. This will run the simulations and generate the results.
