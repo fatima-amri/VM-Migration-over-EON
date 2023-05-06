@@ -1,8 +1,8 @@
-# Energy-Aware Inter-DC VM Migration Over Elastic Optical Networks
+## Energy-Aware Inter-DC VM Migration Over Elastic Optical Networks
 This repository contains the code for the submission "Energy-Aware Inter-Data Center VM Migration Over Elastic Optical Networks" to Globecom 2023.
 #
 
-## Steps to Reproduce Results
+### Steps to Reproduce Results
 
 To reproduce the results in this project, please follow these steps:
 1. Clone the repository to your local machine:
@@ -25,14 +25,14 @@ Note: The code was tested with Python 3.9.6 and MATLAB R2017a.
 
 #
 
-## Topologies
+### Topologies
 
 Our code can be used with various network topologies in different scales. For the experiments reported in our paper, we used the NSFNET topologies, which are included in this repository. Due to the page size limitation, we only report the results for the NSFNET topologies. However, we have also included two other topologies in this repository, one smaller (Six-node) and one larger (USNET), that can be used for testing purposes. 
 To use a different topology, simply provide the corresponding topology as input to the script.
 
 #
 
-### Files description
+#### Files description
 
 `migration.py:` This is the main code file which includes the implementation of the proposed algorithms for inter-DC VM migration using MAB and CMAB.
 
