@@ -11,7 +11,7 @@ reg = []
 teta_vec =[]
 costNet_vec =[]
 
-# As we used some random variables, we repeat the simulation 100 times.
+# As we used some random variables, we repeat the simulation 100 times, and consider the average.
 for r in range(100): 
     (List_D, P_dc, RE_resources, all_cpu_reqs, initial_cost) = controller_checkup()
     (COST, BEcostOfDC, reg_vec, teta, costNet) = MAB(numOfNode, List_D, P_dc, RE_resources, all_cpu_reqs)
@@ -35,9 +35,7 @@ for r in range(100):
     mig_vec.append(Topo_migCost)
 
     if total_BEc_after < total_BEc_before:
-        print("yes")
-        #print("the cost has been decreased by ", total_c_before - total_c_after)
-        #print("so we have ", (100 - ((total_c_after / total_c_before) * 100)), " percent improvement (decrease)")
+        print("successful")
         p = (100 - ((total_BEc_after / total_BEc_before) * 100))
         improvement_lst.append(p)
 
