@@ -9,12 +9,9 @@ imprv_percentage = [71.27, 62.41, 61.27, 55.930, 51.56, 44.903, 37.29, 34.037];
 
 numOfReq = [400, 440, 480, 520,560,600, 640, 680];
 
-% with Tr cost = 22
 cmig_MAB = [620.219,642.765, 657.634, 663.532, 684.864, 709.931, 722.419, 776.470];
 cmig_kube =[825.905, 837.905, 845.866, 867.306, 903.450, 943.589, 965.046, 1062.129];
-%cmig_greedy= [2080.360, 2298.21, 2512.003, 2624.276, 2761.450, 2903.640, 3355.074, 3625.623];
 cmig_greedy= [1180.360, 1238.21, 1312.003, 1424.276, 1561.450, 1603.640, 1755.074, 1825.623];
-
 
 
 %1
@@ -24,60 +21,24 @@ bar(NumOfReq, comp, 'grouped')
 grid on
 xlabel(['Number of Requests',newline,'(a)'],'fontweight','bold','fontsize',10, 'FontName','times')
 ylabel('BE Consumption Cost of DCs','fontweight','bold','fontsize',10,'FontName','times')
-%title('(a)','FontSize',13,'fontweight','bold','Interpreter','latex')
 lgnd1 = legend('Before Migration', 'After Migration Using SW-LCB','Location','northwest','FontName','times')
 set(lgnd1,'color','none', 'EdgeColor', 'none');
-%ylim([99000,610000])
 
-
-%2 plotting the bar chart:
+%2
 subplot(2,1,2)
 cost =[cmig_MAB(:),cmig_kube(:), cmig_greedy(:)];
 bar(numOfReq,cost,'grouped')
 grid on
 xlabel(['Number of Requests',newline,'(b)'],'fontweight','bold','fontsize',10, 'FontName','times')
 ylabel('Migration Cost','fontweight','bold','fontsize',10, 'FontName','times')
-%title('(b)','FontSize',13,'FontWeight','bold', 'Interpreter','latex')
 lgnd2 = legend('SW-LCB','KUBE', '\epsilon-Greedy','Location','northwest')
 set(lgnd2,'color','none', 'EdgeColor', 'none');
-%ylim([0, 1850]);
 
-%{
-xlabel(['xlabel',newline,'\bf I Love Fatima']) 
-xlabel(['xlabel',newline,'', newline, '']) 
-h = title(['I Love Fatima']) 
-set(h,'position',get(h,'position')-[0 5.5 0])
-ylabel('ylabel')
-%}
 
-%{
-subplot(3,1,3)
-netcost = [cnet_MAB(:),cnet_noGrooming(:),cnet_greedy(:), cnet_greedy_noG(:)];
-bar(numOfReq,netcost,'grouped')
-grid on
-xlabel('Number of Requests','fontweight','bold','fontsize',10, 'FontName','times')
-ylabel('Cost of Optical Network Elements (Cent)','fontweight','bold','fontsize',10, 'FontName','times')
-title('(c)','FontSize',13,'FontWeight','bold','Interpreter','latex')
-legend('SW-LCB','SW-LCB Without Optical Grooming', '\epsilon-Greedy With Optical Grooming', '\epsilon-Greedy Without Optical Grooming','Location','northwest')
-%}
-%{
-subplot(3,1,3)
-plot(numOfReq, cnet_MAB, '-bs','LineWidth',2,'MarkerSize',10)
-hold on 
-plot(numOfReq, cnet_noGrooming,'-.ks' ,'LineWidth',2,'MarkerSize',10)
-hold on 
-plot(numOfReq, cnet_greedy,'-g*' ,'LineWidth',2,'MarkerSize',10)
-hold on
-plot(numOfReq, cnet_greedy_noG, '-.r*','LineWidth',2,'MarkerSize',10)
-grid on
-xlabel('Number of Requests','fontweight','bold','fontsize',10, 'FontName','times')
-ylabel('Cost of Optical Network Elements (Cent)','fontweight','bold','fontsize',10, 'FontName','times')
-legend('SW-LCB','SW-LCB Without Optical Grooming', '\epsilon-Greedy With Optical Grooming', '\epsilon-Greedy Without Optical Grooming','Location','northwest')
-%xlim([400,680])
-%ylim([60000, 145000]);
-%}
+
 %%
-
+  
+  
 numOfReq = [400, 440, 480, 520,560,600, 640, 680];
 cnet_MAB = [62211.65, 73865.998, 74234.51, 84712.497, 88867.598, 97326.853, 109684.510, 112587.141];
 cnet_noGrooming = [73086.036, 81644.474, 85410.116, 94512.86, 101005.459, 107090.506, 123338.612, 128075.53];
@@ -90,23 +51,22 @@ c_MAB =[111996.175, 151088.89, 176997.912, 218276.979, 249083.57, 318296.073, 37
 c_kube =[120305.188, 160559.57, 191198.42, 225520.734, 266616.77, 332883.30, 397781.452, 465523.408 ];
 c_greedy = [159413.938, 182425.200, 222158.248, 252664.684, 294853.963, 359207.801, 433763.105, 509218.67 ];
 
-
+%1
 subplot(2,1,1)
 netcost = [cnet_greedy_noG(:),cnet_greedy(:),cnet_noGrooming(:), cnet_MAB(:)];
 bar(numOfReq,netcost,'grouped')
 grid on
 xlabel(['Number of Requests',newline,'(a)'],'fontweight','bold','fontsize',10, 'FontName','times')
 ylabel('Cost of Optical Network Devices','fontweight','bold','fontsize',10, 'FontName','times')
-%title('(a)','FontSize',13,'FontWeight','bold','Interpreter','latex')
 lgnd3 = legend('\epsilon-Greedy Without Optical Grooming','\epsilon-Greedy With Optical Grooming','SW-LCB Without Optical Grooming','SW-LCB', 'Location','northwest');
 set(lgnd3,'color','none', 'EdgeColor', 'none');
 
+%2
 subplot(2,1,2)
 total = [c_MAB(:),c_kube(:), c_greedy(:), c_MAB_noMig(:)];
 bar(numOfReq,total,'grouped')
 grid on
 xlabel(['Number of Requests',newline,'(b)'],'fontweight','bold','fontsize',10, 'FontName','times')
 ylabel('Total Cost','fontweight','bold','fontsize',10, 'FontName','times')
-%title('(b)','FontSize',13,'FontWeight','bold','Interpreter','latex')
 lgnd4 = legend('SW-LCB','KUBE','\epsilon-Greedy','No Migration','Location','northwest')
 set(lgnd4,'color','none', 'EdgeColor', 'none');
