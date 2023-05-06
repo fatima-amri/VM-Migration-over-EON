@@ -32,9 +32,9 @@ To use a different topology, simply provide the corresponding topology as input 
 
 #
 
-#### Files description
+#### Files Description
 
-`Migration-Functions.py:` This is the main migration code file which includes the Controller checkup, MAB and optical grooming functions of the proposed algorithms for inter-DC VM migration using MAB and CMAB.
+`MigrationFunctions.py:` This is the main migration code file which includes the Controller checkup, MAB and optical grooming functions of the proposed algorithms for inter-DC VM migration using MAB and CMAB.
 
 `SideFunctions.py:` This code file contains required functions that are called in the `MigrationFunctions.py`.
 
